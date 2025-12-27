@@ -1,0 +1,4 @@
+/survey/*.json
+/survey/*.txt
+/inc/config.php
+/inc/config.infinityfree.php
