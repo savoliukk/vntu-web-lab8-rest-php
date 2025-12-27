@@ -4,9 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/inc/http.php';
 require_once __DIR__ . '/inc/helpers.php';
 
-$scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-$base = $scheme . '://' . $_SERVER['HTTP_HOST'];
-$jsonUrl = $base . '/json.php';
+$jsonUrl = 'http://127.0.0.1/json.php';
 
 $error = null;
 $items = [];
