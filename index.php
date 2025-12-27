@@ -14,65 +14,69 @@ $cols = [];
 try {
   $json = httpGet($url);
 
-  // Вимога: json_decode у об’єкти PHP
+  // Вимога методички: json_decode у об’єкти PHP
   $obj = json_decode($json, false, 512, JSON_THROW_ON_ERROR);
 
-  // для обробки перетворюємо в масиви
+  // Для подальшої обробки перетворимо в масиви
   $data = toArrayDeep($obj);
 
   // Об’єднати всі записи про людей в один масив
   $people = collectPeople($data);
 
-  // Динамічно зберемо колонки
+  // Динамічно зберемо колонки (всі ключі з усіх записів)
   $set = [];
-  foreach ($people as $p) foreach ($p as $k => $_) $set[$k] = true;
+  foreach ($people as $p) {
+    foreach ($p as $k => $_) $set[$k] = true;
+  }
   $cols = array_keys($set);
 } catch (Throwable $e) {
   $error = $e->getMessage();
 }
-?>
-<!doctype html>
-<html lang="uk">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ЛР8 — REST + JSON</title>
-  <link rel="stylesheet" href="/assets/styles.css">
-</head>
-<body>
-  <div class="wrap">
-    <h1>ЛР №8 — REST API → JSON → Таблиця</h1>
-    <p class="muted">URL: <?= h($url) ?></p>
 
-    <?php if ($error): ?>
-      <div class="alert err">Помилка: <?= h($error) ?></div>
-    <?php else: ?>
-      <div class="alert ok">Знайдено записів: <?= count($people) ?></div>
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <?php foreach ($cols as $c): ?><th><?= h((string)$c) ?></th><?php endforeach; ?>
-            </tr>
-          </thead>
-          <tbody>
-            <?php foreach ($people as $p): ?>
-              <tr>
-                <?php foreach ($cols as $c): ?>
-                  <td>
-                    <?php
-                      $v = $p[$c] ?? '';
-                      if (is_array($v)) $v = json_encode($v, JSON_UNESCAPED_UNICODE);
-                      echo h((string)$v);
-                    ?>
-                  </td>
-                <?php endforeach; ?>
-              </tr>
+require __DIR__ . '/templates/header.php';
+?>
+
+<h1>ЛР №8 — REST API → JSON → Таблиця</h1>
+<p class="muted">URL: <?= h($url) ?></p>
+
+<?php if ($error): ?>
+  <div class="alert err">Помилка: <?= h($error) ?></div>
+<?php else: ?>
+  <div class="alert ok">Знайдено записів: <?= count($people) ?></div>
+
+  <?php if (empty($people)): ?>
+    <div class="alert err">Не знайдено жодного запису для відображення.</div>
+  <?php else: ?>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <?php foreach ($cols as $c): ?>
+              <th><?= h((string)$c) ?></th>
             <?php endforeach; ?>
-          </tbody>
-        </table>
-      </div>
-    <?php endif; ?>
-  </div>
-</body>
-</html>
+          </tr>
+        </thead>
+        <tbody>
+          <?php foreach ($people as $p): ?>
+            <tr>
+              <?php foreach ($cols as $c): ?>
+                <td>
+                  <?php
+                    $v = $p[$c] ?? '';
+                    if (is_array($v)) {
+                      $v = json_encode($v, JSON_UNESCAPED_UNICODE);
+                    }
+                    echo h((string)$v);
+                  ?>
+                </td>
+              <?php endforeach; ?>
+            </tr>
+          <?php endforeach; ?>
+        </tbody>
+      </table>
+    </div>
+  <?php endif; ?>
+<?php endif; ?>
+
+<?php
+require __DIR__ . '/templates/footer.php';

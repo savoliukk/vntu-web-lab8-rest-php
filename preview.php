@@ -4,16 +4,22 @@ declare(strict_types=1);
 require_once __DIR__ . '/inc/http.php';
 require_once __DIR__ . '/inc/helpers.php';
 
-$jsonUrl = 'http://127.0.0.1/json.php';
+// ВАЖЛИВО: preview.php виконується всередині контейнера,
+// тому json.php треба читати по внутрішньому порту Apache (80).
+$fetchJsonUrl = 'http://127.0.0.1/json.php';
+
+// А для відображення користувачу в UI — нормальний шлях
+$displayJsonUrl = '/json.php';
 
 $error = null;
 $items = [];
 $answerCols = [];
 
 try {
-  $raw = httpGet($jsonUrl);
+  $raw = httpGet($fetchJsonUrl);
   $items = json_decode($raw, true, 512, JSON_THROW_ON_ERROR);
 
+  // Збираємо всі можливі ключі answers, щоб побудувати колонки таблиці
   $set = [];
   foreach ($items as $it) {
     if (isset($it['answers']) && is_array($it['answers'])) {
@@ -24,31 +30,31 @@ try {
 } catch (Throwable $e) {
   $error = $e->getMessage();
 }
+
+require __DIR__ . '/templates/header.php';
 ?>
-<!doctype html>
-<html lang="uk">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>ЛР8 — preview.php</title>
-  <link rel="stylesheet" href="/assets/styles.css">
-</head>
-<body>
-<div class="wrap">
-  <h1>Preview анкет (з json.php)</h1>
-  <p class="muted">Джерело: <?= h($jsonUrl) ?></p>
 
-  <?php if ($error): ?>
-    <div class="alert err">Помилка: <?= h($error) ?></div>
+<h1>Preview анкет (з json.php)</h1>
+<p class="muted">Джерело JSON: <?= h($displayJsonUrl) ?></p>
+
+<?php if ($error): ?>
+  <div class="alert err">Помилка: <?= h($error) ?></div>
+<?php else: ?>
+  <div class="alert ok">Анкет: <?= count($items) ?></div>
+
+  <?php if (empty($items)): ?>
+    <div class="alert err">Немає даних для відображення.</div>
   <?php else: ?>
-    <div class="alert ok">Анкет: <?= count($items) ?></div>
-
     <div class="table-wrap">
       <table>
         <thead>
           <tr>
-            <th>name</th><th>email</th><th>submitted_at</th>
-            <?php foreach ($answerCols as $c): ?><th><?= h($c) ?></th><?php endforeach; ?>
+            <th>name</th>
+            <th>email</th>
+            <th>submitted_at</th>
+            <?php foreach ($answerCols as $c): ?>
+              <th><?= h($c) ?></th>
+            <?php endforeach; ?>
           </tr>
         </thead>
         <tbody>
@@ -57,6 +63,7 @@ try {
               <td><?= h((string)($it['name'] ?? '')) ?></td>
               <td><?= h((string)($it['email'] ?? '')) ?></td>
               <td><?= h((string)($it['submitted_at'] ?? '')) ?></td>
+
               <?php foreach ($answerCols as $c): ?>
                 <td><?= h((string)($it['answers'][$c] ?? '')) ?></td>
               <?php endforeach; ?>
@@ -66,6 +73,7 @@ try {
       </table>
     </div>
   <?php endif; ?>
-</div>
-</body>
-</html>
+<?php endif; ?>
+
+<?php
+require __DIR__ . '/templates/footer.php';
